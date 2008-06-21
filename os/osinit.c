@@ -190,6 +190,7 @@ OsInit(void)
 	LockServer();
 	been_here = TRUE;
     }
+    WaitForSomethingInit();
     TimerInit();
     OsVendorInit();
     /*
