@@ -10,6 +10,10 @@ if XVFB
 XVFB_SUBDIRS = vfb
 endif
 
+if XCLUTTER
+XCLUTTER_SUBDIRS = xclutter
+endif
+
 if XNEST
 XNEST_SUBDIRS = xnest
 endif
@@ -30,12 +34,13 @@ SUBDIRS =			\
 	$(XORG_SUBDIRS)		\
 	$(XWIN_SUBDIRS)		\
 	$(XVFB_SUBDIRS)		\
+	$(XCLUTTER_SUBDIRS)	\
 	$(XNEST_SUBDIRS)	\
 	$(DMX_SUBDIRS)		\
 	$(KDRIVE_SUBDIRS)	\
 	$(XQUARTZ_SUBDIRS)
 
-DIST_SUBDIRS = dmx xfree86 vfb xnest xwin xquartz kdrive
+DIST_SUBDIRS = dmx xfree86 vfb xclutter xnest xwin xquartz kdrive
 
 relink:
 	for i in $(SUBDIRS) ; do $(MAKE) -C $$i relink ; done

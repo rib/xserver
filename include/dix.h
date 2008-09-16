@@ -514,6 +514,9 @@ ScreenRestructured (ScreenPtr pScreen);
 
 extern _X_EXPORT int ffs(int i);
 
+
+extern Bool PointInBorderSize(WindowPtr pWin, int x, int y);
+
 /*
  *  callback manager stuff
  */
@@ -630,4 +633,8 @@ extern _X_EXPORT int ExtGrabDevice(ClientPtr client,
                          CursorPtr cursor, 
                          Mask xi_mask,
                          GenericMaskPtr ge_masks);
+
+
+extern WindowPtr (*XYToWindowDDX) (DeviceIntPtr pDev, int x, int y);
+
 #endif /* DIX_H */

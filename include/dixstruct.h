@@ -41,11 +41,19 @@ SOFTWARE.
 #define MAX_REQUEST_LOG 100
 #endif
 
+extern _X_EXPORT CallbackListPtr FixUpEventFromWindowCallback;
+
+typedef struct {
+    DeviceIntPtr  pDev;
+    xEvent	  *xE;
+    WindowPtr	  pWin;
+} FixUpEventFromWindowInfoRec;
+
 extern _X_EXPORT CallbackListPtr ClientStateCallback;
 
 typedef struct {
     ClientPtr 		client;
-    xConnSetupPrefix 	*prefix; 
+    xConnSetupPrefix 	*prefix;
     xConnSetup  	*setup;
 } NewClientInfoRec;
 
@@ -131,7 +139,7 @@ typedef struct _Client {
     long    smart_start_tick;
     long    smart_stop_tick;
     long    smart_check_tick;
-    
+
     DeviceIntPtr clientPtr;
 }           ClientRec;
 

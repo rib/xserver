@@ -579,6 +579,7 @@ dnl DDXes.
 AC_ARG_ENABLE(xorg,    	      AS_HELP_STRING([--enable-xorg], [Build Xorg server (default: auto)]), [XORG=$enableval], [XORG=auto])
 AC_ARG_ENABLE(dmx,    	      AS_HELP_STRING([--enable-dmx], [Build DMX server (default: no)]), [DMX=$enableval], [DMX=no])
 AC_ARG_ENABLE(xvfb,    	      AS_HELP_STRING([--enable-xvfb], [Build Xvfb server (default: yes)]), [XVFB=$enableval], [XVFB=yes])
+AC_ARG_ENABLE(xclutter,       AS_HELP_STRING([--enable-xclutter], [Build Xclutter server (default: auto)]), [XCLUTTER=$enableval], [XCLUTTER=auto])
 AC_ARG_ENABLE(xnest,   	      AS_HELP_STRING([--enable-xnest], [Build Xnest server (default: no)]), [XNEST=$enableval], [XNEST=no])
 AC_ARG_ENABLE(xquartz,        AS_HELP_STRING([--enable-xquartz], [Build Xquartz server for OS-X (default: auto)]), [XQUARTZ=$enableval], [XQUARTZ=auto])
 AC_ARG_ENABLE(standalone-xpbproxy, AS_HELP_STRING([--enable-standalone-xpbproxy], [Build a standalone xpbproxy (in addigion to the one integrated into Xquartz as a separate thread) (default: no)]), [STANDALONE_XPBPROXY=$enableval], [STANDALONE_XPBPROXY=no])
@@ -674,6 +675,7 @@ case $host_os in
 		if test "x$XQUARTZ" = xyes ; then
 			XQUARTZ=yes
 			XVFB=no
+			XCLUTTER=no
 			XNEST=no
 
 			COMPOSITE=no
@@ -693,7 +695,7 @@ XEXTXORG_LIB='$(top_builddir)/Xext/libXextbuiltin.la'
 
 dnl Core modules for most extensions, et al.
 REQUIRED_MODULES="[randrproto >= 1.2.99.3] [renderproto >= 0.9.3] [fixesproto >= 4.0] [damageproto >= 1.1] xcmiscproto [xextproto >= 7.0.3] [xproto >= 7.0.13] [xtrans >= 1.2.2] bigreqsproto resourceproto fontsproto [inputproto >= 1.9.99.6] [kbproto >= 1.0.3]"
-REQUIRED_LIBS="xfont xau fontenc [pixman-1 >= 0.13.2]"
+REQUIRED_LIBS="xfont xau fontenc [pixman-1 >= 0.13.2] glib-2.0"
 
 dnl HAVE_DBUS is true if we actually have the D-Bus library, whereas
 dnl CONFIG_DBUS_API is true if we want to enable the D-Bus config
@@ -1251,6 +1253,24 @@ if test "x$XVFB" = xyes; then
 fi
 
 
+dnl Xclutter DDX
+
+AC_MSG_CHECKING([whether to build Xclutter DDX])
+PKG_CHECK_MODULES(XCLUTTERMODULES, [clutter-0.8], [have_xclutter=yes], [have_xclutter=no])
+if test "x$XCLUTTER" != xno; then
+	XCLUTTER="$have_xclutter"
+fi
+AC_MSG_RESULT([$XCLUTTER])
+AM_CONDITIONAL(XCLUTTER, [test "x$XCLUTTER" = xyes])
+
+if test "x$XCLUTTER" = xyes; then
+	XCLUTTER_LIBS="$FB_LIB $FIXES_LIB $MI_LIB $XEXT_LIB $DBE_LIB $XTRAP_LIB $RECORD_LIB $GLX_LIBS $RANDR_LIB $RENDER_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $MIEXT_SHADOW_LIB $XI_LIB $XKB_LIB $XKB_STUB_LIB $COMPOSITE_LIB $DIX_LIB $OS_LIB $CONFIG_LIB"
+	XCLUTTER_SYS_LIBS="$XCLUTTERMODULES_LIBS"
+	AC_SUBST([XCLUTTER_LIBS])
+	AC_SUBST([XCLUTTER_SYS_LIBS])
+fi
+
+
 dnl Xnest DDX
 
 PKG_CHECK_MODULES(XNESTMODULES, [xfont xext x11 xau $XDMCP_MODULES], [have_xnest=yes], [have_xnest=no])
@@ -1774,6 +1794,12 @@ if test "$KDRIVE" = yes; then
        XSDL_INCS="`sdl-config --cflags` $XSERVER_CFLAGS"
     fi
 
+    XFAKE_REQUIRED_LIBS="clutter-0.7"
+    PKG_CHECK_MODULES(XFAKE, $XFAKE_REQUIRED_LIBS, [xfake="yes"], [xfake="no"])
+    if test "x$XFAKE" = xauto; then
+	XFAKE=$xfake
+    fi
+
     XEPHYR_REQUIRED_LIBS="x11 xext xfont xau xdmcp"
     if test "x$XV" = xyes; then
         XEPHYR_REQUIRED_LIBS="$XEPHYR_REQUIRED_LIBS xv"
@@ -1821,6 +1847,8 @@ if test "$KDRIVE" = yes; then
     KDRIVE_LOCAL_LIBS="$KDRIVE_LOCAL_LIBS $KDRIVE_OS_LIB $OS_LIB"
     KDRIVE_LIBS="$TSLIB_LIBS $KDRIVE_LOCAL_LIBS $XSERVER_SYS_LIBS $GLX_SYS_LIBS"
 
+    AC_SUBST([XFAKE_LIBS])
+    AC_SUBST([XFAKE_CFLAGS])
     AC_SUBST([XEPHYR_LIBS])
     AC_SUBST([XEPHYR_INCS])
     AC_SUBST([XSDL_LIBS])
@@ -1946,6 +1974,7 @@ hw/dmx/input/Makefile
 hw/dmx/glxProxy/Makefile
 hw/dmx/Makefile
 hw/vfb/Makefile
+hw/xclutter/Makefile
 hw/xnest/Makefile
 hw/xwin/Makefile
 hw/xquartz/Makefile

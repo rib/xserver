@@ -238,6 +238,21 @@ static int DontPropagateRefCnts[DNPMCOUNT];
  */
 InputInfo inputInfo;
 
+
+/**
+ * XXX: Not sure this is consistent with other code doing similar things,
+ * but this just allows a DDX to hook in and replace the default
+ * XYToWindow implementation.
+ */
+_X_EXPORT WindowPtr (*XYToWindowDDX) (DeviceIntPtr pDev, int x, int y);
+
+/**
+ * This list of callbacks are called at the end of FixUpEventFromWindow
+ * to e.g. allow a DDX to apply alternative transformations on the event
+ * window coordinates.
+ */
+_X_EXPORT CallbackListPtr FixUpEventFromWindowCallback;
+
 /**
  * syncEvents is the global structure for queued events.
  * Devices can be frozen through GrabModeSync pointer grabs. If this is the
@@ -2215,6 +2230,7 @@ FixUpEventFromWindow(
     Bool calcChild)
 {
     SpritePtr pSprite = pDev->spriteInfo->sprite;
+    FixUpEventFromWindowInfoRec fixupinfo; 
 
     if (xE->u.u.type == GenericEvent) /* just a safety barrier */
         return;
@@ -2264,6 +2280,11 @@ FixUpEventFromWindow(
 	XE_KBPTR.eventX = 0;
 	XE_KBPTR.eventY = 0;
     }
+  
+    fixupinfo.pDev = pDev;
+    fixupinfo.xE = xE;
+    fixupinfo.pWin = pWin;
+    CallCallbacks (&FixUpEventFromWindowCallback, &fixupinfo);
 }
 
 /**
@@ -2439,7 +2460,7 @@ DeliverEvents(WindowPtr pWin, xEvent *xE, int count,
 }
 
 
-static Bool
+_X_EXPORT Bool
 PointInBorderSize(WindowPtr pWin, int x, int y)
 {
     BoxRec box;
@@ -2487,6 +2508,10 @@ XYToWindow(DeviceIntPtr pDev, int x, int y)
     pSprite = pDev->spriteInfo->sprite;
     pSprite->spriteTraceGood = 1;	/* root window still there */
     pWin = RootWindow(pDev)->firstChild;
+
+    if (XYToWindowDDX)
+      return XYToWindowDDX (pDev, x, y);
+    
     while (pWin)
     {
 	if ((pWin->mapped) &&
