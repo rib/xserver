@@ -1,8 +1,8 @@
 /*
  * Xephyr - A kdrive X server thats runs in a host X window.
  *          Authored by Matthew Allum <mallum@openedhand.com>
- * 
- * Copyright © 2007 OpenedHand Ltd 
+ *
+ * Copyright © 2007 OpenedHand Ltd
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -168,6 +168,7 @@ ephyrDRIExtensionInit (ScreenPtr a_screen)
         goto out ;
     }
     EphyrMirrorHostVisuals (a_screen) ;
+    HackRemoveOriginalVisuals (a_screen);
     is_ok=TRUE ;
 out:
     EPHYR_LOG ("leave\n") ;
@@ -469,7 +470,7 @@ EphyrDuplicateVisual (unsigned int a_screen,
     VisualRec new_visual, *new_visuals=NULL ;
     int i=0 ;
 
-    EPHYR_LOG ("enter\n") ; 
+    EPHYR_LOG ("enter\n") ;
     if (a_screen > screenInfo.numScreens) {
         EPHYR_LOG_ERROR ("bad screen number\n") ;
         goto out;
@@ -566,8 +567,20 @@ out:
         xfree (new_visuals) ;
         new_visuals = NULL ;
     }
-    EPHYR_LOG ("leave\n") ; 
+    EPHYR_LOG ("leave\n") ;
     return is_ok ;
+}
+
+/**
+ * HackRemoveOriginalVisuals:
+ * @screen: X Screen pointer
+ *
+ * Removes all the original visuals that aren't available in the host X server.
+ */
+static void
+HackRemoveOriginalVisuals (ScreenPtr a_screen)
+{
+  /* Not sure this is a good idea! */
 }
 
 /**
@@ -789,15 +802,15 @@ ProcXF86DRIGetClientDriverName (register ClientPtr client)
     rep.clientDriverNameLength = 0;
     if (clientDriverName)
 	rep.clientDriverNameLength = strlen(clientDriverName);
-    rep.length = (SIZEOF(xXF86DRIGetClientDriverNameReply) - 
+    rep.length = (SIZEOF(xXF86DRIGetClientDriverNameReply) -
 			SIZEOF(xGenericReply) +
 			((rep.clientDriverNameLength + 3) & ~3)) >> 2;
 
-    WriteToClient(client, 
+    WriteToClient(client,
 	sizeof(xXF86DRIGetClientDriverNameReply), (char *)&rep);
     if (rep.clientDriverNameLength)
-	WriteToClient(client, 
-                      rep.clientDriverNameLength, 
+	WriteToClient(client,
+                      rep.clientDriverNameLength,
                       clientDriverName);
     EPHYR_LOG ("leave\n") ;
     return (client->noClientException);
@@ -1297,7 +1310,7 @@ ProcXF86DRIGetDeviceInfo (register ClientPtr client)
 
     rep.length = 0;
     if (rep.devPrivateSize) {
-        rep.length = (SIZEOF(xXF86DRIGetDeviceInfoReply) - 
+        rep.length = (SIZEOF(xXF86DRIGetDeviceInfoReply) -
                 SIZEOF(xGenericReply) +
                 ((rep.devPrivateSize + 3) & ~3)) >> 2;
     }

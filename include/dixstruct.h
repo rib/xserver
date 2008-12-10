@@ -67,7 +67,8 @@ extern _X_EXPORT void ReplyNotSwappd (
 		int		/* size */,
 		void *		/* pbuf */);
 
-typedef enum {ClientStateInitial,
+typedef enum {ClientStateSetup,
+	      ClientStateInitial,
 	      ClientStateAuthenticating,
 	      ClientStateRunning,
 	      ClientStateRetained,

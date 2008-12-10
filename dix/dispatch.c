@@ -3470,7 +3470,7 @@ void InitClient(ClientPtr client, int i, pointer ospriv)
     client->swapped = FALSE;
     client->big_requests = FALSE;
     client->priority = 0;
-    client->clientState = ClientStateInitial;
+    client->clientState = ClientStateSetup;
     client->devPrivates = NULL;
     client->xkbClientFlags = 0;
     client->mapNotifyMask = 0;
@@ -3507,6 +3507,16 @@ ClientPtr NextAvailableClient(pointer ospriv)
     if (!client)
 	return (ClientPtr)NULL;
     InitClient(client, i, ospriv);
+    if (ClientStateCallback)
+    {
+	NewClientInfoRec clientinfo;
+
+        clientinfo.client = client; 
+        clientinfo.prefix = (xConnSetupPrefix *)NULL;  
+        clientinfo.setup = (xConnSetup *) NULL;
+	CallCallbacks((&ClientStateCallback), (pointer)&clientinfo);
+    } 	
+    client->clientState = ClientStateInitial;
     if (!InitClientResources(client))
     {
 	xfree(client);

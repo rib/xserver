@@ -38,6 +38,9 @@
 #include "ephyrglxext.h"
 #endif /* XF86DRI */
 
+#include "buddy.h"
+#include "proxies.h"
+
 extern int KdTsPhyScreen;
 #ifdef GLXEXT
 extern Bool noGlxVisualInit;
@@ -658,6 +661,9 @@ ephyrInitScreen (ScreenPtr pScreen)
       noGlxVisualInit = FALSE ;
   }
 #endif
+
+  xbuddy_init (pScreen);
+  xproxies_init (pScreen);
 
   return TRUE;
 }

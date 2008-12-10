@@ -1,8 +1,8 @@
 /*
  * Xephyr - A kdrive X server thats runs in a host X window.
  *          Authored by Matthew Allum <mallum@openedhand.com>
- * 
- * Copyright © 2007 OpenedHand Ltd 
+ *
+ * Copyright © 2007 OpenedHand Ltd
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -29,6 +29,7 @@
 #ifndef __EPHYRHOSTPROXY_H__
 #define __EPHYRHOSTPROXY_H__
 
+
 struct XReply {
     int8_t type ;/*X_Reply*/
     int8_t foo;
@@ -43,9 +44,33 @@ struct XReply {
     int32_t pad5 ;
 };
 
+typedef struct _XProxyBuffer
+{
+  size_t   len;
+  char	  *buf;
+  char	  *pos;
+  size_t   remaining;
+} XProxyBuffer;
+
+int
+ephyrHostProxyOpenDisplay (void **host_xdpy);
+
+void
+ephyrHostProxyCloseDisplay (void *host_xdpy);
+
 Bool
-ephyrHostProxyDoForward (pointer a_request_buffer,
-                         struct XReply *a_reply,
-                         Bool a_do_swap) ;
+ephyrHostProxyGetGLXMajor (void *xdpy, int *major);
+
+Bool
+ephyrHostProxyDoForward (void *xdpy,
+			 char *request_buffer,
+			 u_int8_t major,
+			 /* char *reply_buffer, */
+			 Bool do_swap);
+
+void ephyrHostProxyDoBackward (void *xdpy, ClientPtr client, XProxyBuffer *buf);
+
+void ephyrHostProxyChangeClientIndex (void *_xdpy, ClientPtr client);
 
 #endif /*__EPHYRHOSTPROXY_H__*/
+

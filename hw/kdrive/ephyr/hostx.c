@@ -1,8 +1,8 @@
 /*
  * Xephyr - A kdrive X server thats runs in a host X window.
  *          Authored by Matthew Allum <mallum@o-hand.com>
- * 
- * Copyright © 2004 Nokia 
+ *
+ * Copyright © 2004 Nokia
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -68,10 +68,10 @@ extern Bool XF86DRIQueryExtension (Display *dpy,
                                    int *error_basep);
 #endif
 
-/*  
+/*
  * All xlib calls go here, which gets built as its own .a .
  * Mixing kdrive and xlib headers causes all sorts of types
- * to get clobbered. 
+ * to get clobbered.
  */
 
 struct EphyrHostScreen
@@ -230,8 +230,8 @@ hostx_set_win_title (EphyrScreenInfo screen, char *extra_text)
     return;
 
   memset (buf, 0, BUF_LEN+1) ;
-  snprintf (buf, BUF_LEN, "Xephyr on %s.%d %s", 
-            HostX.server_dpy_name, 
+  snprintf (buf, BUF_LEN, "Xephyr on %s.%d %s",
+            HostX.server_dpy_name,
             host_screen->mynum,
             (extra_text != NULL) ? extra_text : "");
 
@@ -283,9 +283,9 @@ hostx_set_fullscreen_hint (void)
   Atom atom_WINDOW_STATE, atom_WINDOW_STATE_FULLSCREEN;
   int index;
 
-  atom_WINDOW_STATE 
+  atom_WINDOW_STATE
     = XInternAtom(HostX.dpy, "_NET_WM_STATE", False);
-  atom_WINDOW_STATE_FULLSCREEN 
+  atom_WINDOW_STATE_FULLSCREEN
     = XInternAtom(HostX.dpy, "_NET_WM_STATE_FULLSCREEN",False);
 
   for (index = 0 ; index < HostX.n_screens ; index++)
@@ -417,7 +417,7 @@ hostx_init (void)
               hostx_set_fullscreen_hint();
             }
 
-          if (class_hint) 
+          if (class_hint)
             {
               tmpstr = getenv("RESOURCE_NAME");
               if (tmpstr && (!ephyrResNameFromCmd))
@@ -446,7 +446,7 @@ hostx_init (void)
       cursor_pxm = XCreatePixmap (HostX.dpy, HostX.winroot, 1, 1, 1);
       memset (&col, 0, sizeof (col));
       empty_cursor = XCreatePixmapCursor (HostX.dpy,
-                                          cursor_pxm, cursor_pxm, 
+                                          cursor_pxm, cursor_pxm,
                                           &col, &col, 1, 1);
       for ( index = 0 ; index < HostX.n_screens ; index++ )
         {
@@ -657,11 +657,11 @@ hostx_screen_init (EphyrScreenInfo screen,
 	}
       else
 	{
-	  if (host_screen->ximg->data) 
+	  if (host_screen->ximg->data)
 	    {
 	      free(host_screen->ximg->data);
 	      host_screen->ximg->data = NULL;
-	    } 
+	    }
 
 	  XDestroyImage(host_screen->ximg);
 	}
@@ -769,15 +769,15 @@ hostx_paint_rect (EphyrScreenInfo screen,
       hostx_paint_debug_rect(host_screen, dx, dy, width, height);
     }
 
-  /* 
+  /*
    * If the depth of the ephyr server is less than that of the host,
    * the kdrive fb does not point to the ximage data but to a buffer
    * ( fb_data ), we shift the various bits from this onto the XImage
    * so they match the host.
    *
-   * Note, This code is pretty new ( and simple ) so may break on 
-   *       endian issues, 32 bpp host etc. 
-   *       Not sure if 8bpp case is right either. 
+   * Note, This code is pretty new ( and simple ) so may break on
+   *       endian issues, 32 bpp host etc.
+   *       Not sure if 8bpp case is right either.
    *       ... and it will be slower than the matching depth case.
    */
 
@@ -804,7 +804,7 @@ hostx_paint_rect (EphyrScreenInfo screen,
 		  b = ((pixel & 0x001f) << 3);
 
 		  host_pixel = (r << 16) | (g << 8) | (b);
-		  
+
 		  XPutPixel(host_screen->ximg, x, y, host_pixel);
 		  break;
 		}
@@ -828,7 +828,7 @@ hostx_paint_rect (EphyrScreenInfo screen,
     }
   else
     {
-      XPutImage (HostX.dpy, host_screen->win, HostX.gc, host_screen->ximg, 
+      XPutImage (HostX.dpy, host_screen->win, HostX.gc, host_screen->ximg,
                  sx, sy, dx, dy, width, height);
     }
 
@@ -845,7 +845,7 @@ hostx_paint_debug_rect (struct EphyrHostScreen *host_screen,
   tspec.tv_sec  = HostX.damage_debug_msec / (1000000);
   tspec.tv_nsec = (HostX.damage_debug_msec % 1000000) * 1000;
 
-  EPHYR_DBG("msec: %li tv_sec %li, tv_msec %li", 
+  EPHYR_DBG("msec: %li tv_sec %li, tv_msec %li",
 	    HostX.damage_debug_msec, tspec.tv_sec, tspec.tv_nsec);
 
   /* fprintf(stderr, "Xephyr updating: %i+%i %ix%i\n", x, y, width, height); */
@@ -929,7 +929,7 @@ hostx_get_event(EphyrHostXEvent *ev)
     {
       XNextEvent(HostX.dpy, &xev);
 
-      switch (xev.type) 
+      switch (xev.type)
 	{
 	case Expose:
 	  /* Not so great event compression, but works ok */
@@ -970,9 +970,9 @@ hostx_get_event(EphyrHostXEvent *ev)
 	case ButtonPress:
 	  ev->type = EPHYR_EV_MOUSE_PRESS;
 	  ev->key_state = xev.xkey.state;
-	  /* 
+	  /*
 	   * This is a bit hacky. will break for button 5 ( defined as 0x10 )
-           * Check KD_BUTTON defines in kdrive.h 
+           * Check KD_BUTTON defines in kdrive.h
 	   */
 	  ev->data.mouse_down.button_num = 1<<(xev.xbutton.button-1);
 	  return 1;
@@ -987,7 +987,7 @@ hostx_get_event(EphyrHostXEvent *ev)
 	  {
 	    ev->type = EPHYR_EV_KEY_PRESS;
 	    ev->key_state = xev.xkey.state;
-	    ev->data.key_down.scancode = xev.xkey.keycode;  
+	    ev->data.key_down.scancode = xev.xkey.keycode;
 	    return 1;
 	  }
 	case KeyRelease:
@@ -1010,15 +1010,15 @@ hostx_get_event(EphyrHostXEvent *ev)
 	      else
 		{
 		  /* Attempt grab */
-		  if (XGrabKeyboard (HostX.dpy, host_screen->win, True, 
-				     GrabModeAsync, 
-				     GrabModeAsync, 
+		  if (XGrabKeyboard (HostX.dpy, host_screen->win, True,
+				     GrabModeAsync,
+				     GrabModeAsync,
 				     CurrentTime) == 0)
 		    {
-		      if (XGrabPointer (HostX.dpy, host_screen->win, True, 
-					NoEventMask, 
-					GrabModeAsync, 
-					GrabModeAsync, 
+		      if (XGrabPointer (HostX.dpy, host_screen->win, True,
+					NoEventMask,
+					GrabModeAsync,
+					GrabModeAsync,
 					host_screen->win, None, CurrentTime) == 0)
 			{
 			  grabbed_screen = host_screen->mynum;
@@ -1033,9 +1033,9 @@ hostx_get_event(EphyrHostXEvent *ev)
 	    }
 
 	  /* Still send the release event even if above has happened
-           * server will get confused with just an up event. 
+           * server will get confused with just an up event.
            * Maybe it would be better to just block shift+ctrls getting to
-           * kdrive all togeather. 
+           * kdrive all togeather.
  	   */
 	  ev->type = EPHYR_EV_KEY_RELEASE;
 	  ev->key_state = xev.xkey.state;
@@ -1154,6 +1154,64 @@ out:
     }
     EPHYR_LOG ("leave\n") ;
     return is_ok ;
+
+}
+
+int
+hostx_create_buddy_window (int screen_number,
+			   EphyrBox *geom,
+			   EphyrHostVisualInfo *visual_info_template,
+			   long vinfo_mask,
+			   int *buddy_window)
+{
+    Bool	 is_ok = FALSE;
+    Display	*dpy = hostx_get_display ();
+    XVisualInfo *visual_info = NULL, visual_info_templ;
+    /* int		 visual_mask = VisualIDMask; */
+    Window	 win = None;
+    int		 nb_visuals = 0, winmask = 0;
+    XSetWindowAttributes attrs;
+
+    EPHYR_RETURN_VAL_IF_FAIL (dpy && geom, FALSE) ;
+
+    EPHYR_LOG ("enter\n") ;
+
+     /*get visual*/
+    /* memset (&visual_info, 0, sizeof (visual_info)) ;
+    visual_info_templ.visualid = visual_id ; */
+    visual_info = XGetVisualInfo (dpy, vinfo_mask,
+                                  (XVisualInfo *)&visual_info_template,
+                                  &nb_visuals) ;
+    if (!visual_info) {
+        EPHYR_LOG_ERROR ("argh, could not find a remote visual with id:%d\n",
+                         visual_id);
+        goto out;
+    }
+    memset (&attrs, 0, sizeof (attrs));
+    attrs.colormap = XCreateColormap (dpy,
+                                      RootWindow (dpy,
+                                                  visual_info->screen),
+                                      visual_info->visual,
+                                      AllocNone);
+    attrs.event_mask = ExposureMask;
+    winmask = CWColormap | CWEventMask;
+
+    win = XCreateWindow (dpy, hostx_get_window (screen_number),
+                         geom->x, geom->y,
+                         geom->width, geom->height, 0,
+                         visual_info->depth, CopyFromParent,
+                         visual_info->visual, winmask, &attrs);
+    if (win == None) {
+        EPHYR_LOG_ERROR ("failed to create peer window\n");
+        goto out;
+    }
+    XFlush (dpy);
+    XMapWindow (dpy, win);
+    *buddy_window = win;
+    is_ok = TRUE;
+out:
+    EPHYR_LOG ("leave\n");
+    return is_ok;
 
 }
 

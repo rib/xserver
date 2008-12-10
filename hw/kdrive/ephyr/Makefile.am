@@ -41,6 +41,9 @@ HOSTDRI_SRCS =			\
 	ephyrhostglx.h
 
 XEPHYR_SRCS =			\
+	buddy.c			\
+	proxies.c		\
+	ephyrhostproxy.c	\
 	ephyr.c			\
 	ephyr.h			\
 	ephyrlog.h		\

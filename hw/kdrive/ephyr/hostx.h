@@ -1,8 +1,8 @@
 /*
  * Xephyr - A kdrive X server thats runs in a host X window.
  *          Authored by Matthew Allum <mallum@o-hand.com>
- * 
- * Copyright © 2004 Nokia 
+ *
+ * Copyright © 2004 Nokia
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -35,7 +35,7 @@
 #define EPHYR_DBG(x, a...) \
  fprintf(stderr, __FILE__ ":%d,%s() " x "\n", __LINE__, __func__, ##a)
 #else
-#define EPHYR_DBG(x, a...) do {} while (0) 
+#define EPHYR_DBG(x, a...) do {} while (0)
 #endif
 
 typedef struct EphyrHostXVars  EphyrHostXVars;
@@ -49,7 +49,7 @@ typedef enum EphyrHostXEventType
   EPHYR_EV_KEY_PRESS,
   EPHYR_EV_KEY_RELEASE,
   EPHYR_EV_EXPOSE
-} 
+}
 EphyrHostXEventType;
 
 /* I can't believe it's not a KeySymsRec. */
@@ -64,16 +64,16 @@ struct EphyrHostXEvent
 {
   EphyrHostXEventType type;
 
-  union 
+  union
   {
-    struct mouse_motion { 	
+    struct mouse_motion {
       int x;
       int y;
       int screen;
       int window;
     } mouse_motion;
 
-    struct mouse_down { 	
+    struct mouse_down {
       int button_num;
     } mouse_down;
 
@@ -109,6 +109,18 @@ typedef struct {
   int colormap_size;
   int bits_per_rgb;
 } EphyrHostVisualInfo;
+
+#define EphyrVisualNoMask		0x0
+#define EphyrVisualIDMask		0x1
+#define EphyrVisualScreenMask		0x2
+#define EphyrVisualDepthMask		0x4
+#define EphyrVisualClassMask		0x8
+#define EphyrVisualRedMaskMask		0x10
+#define EphyrVisualGreenMaskMask	0x20
+#define EphyrVisualBlueMaskMask		0x40
+#define EphyrVisualColormapSizeMask	0x80
+#define EphyrVisualBitsPerRGBMask	0x100
+#define EphyrVisualAllMask		0x1FF
 
 typedef struct {
     int x, y;
@@ -148,7 +160,7 @@ hostx_use_preexisting_window(unsigned long win_id);
 void
 hostx_use_resname (char *name, int fromcmd);
 
-void 
+void
 hostx_handle_signal(int signum);
 
 int
@@ -180,13 +192,13 @@ hostx_get_bpp(void *info);
 
 void
 hostx_get_visual_masks (void   *info,
-			CARD32 *rmsk, 
-			CARD32 *gmsk, 
+			CARD32 *rmsk,
+			CARD32 *gmsk,
 			CARD32 *bmsk);
 void
-hostx_set_cmap_entry(unsigned char idx, 
-		     unsigned char r, 
-		     unsigned char g, 
+hostx_set_cmap_entry(unsigned char idx,
+		     unsigned char r,
+		     unsigned char g,
 		     unsigned char b);
 
 void*
@@ -224,6 +236,12 @@ hostx_get_extension_info (const char *a_ext_name,
 int
 hostx_get_visuals_info (EphyrHostVisualInfo **a_visuals,
                         int *a_num_entries) ;
+
+int hostx_create_buddy_window (int screen_number,
+			       EphyrBox *geom,
+			       EphyrHostVisualInfo *visual_info_template,
+			       long vinfo_mask,
+			       int *buddy_window);
 
 int hostx_create_window (int a_screen_number,
                          EphyrBox *a_geometry,
