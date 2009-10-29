@@ -59,6 +59,7 @@
 #include <X11/extensions/shape.h>
 #ifdef XF86DRI
 #include <GL/glx.h>
+#include <dri2.h>
 #endif /* XF86DRI */
 #include "ephyrlog.h"
 
@@ -157,14 +158,14 @@ error_handler(Display     *display,
   return 0;
 }
 
-static void
+void
 hostx_errors_trap(void)
 {
   trapped_error_code = 0;
   old_error_handler = XSetErrorHandler(error_handler);
 }
 
-static int
+int
 hostx_errors_untrap(void)
 {
   XSetErrorHandler(old_error_handler);
@@ -1425,7 +1426,7 @@ hostx_get_resource_id_peer (int a_local_resource_id,
 }
 
 int
-hostx_has_dri (void)
+hostx_has_dri2 (void)
 {
     int event_base=0, error_base=0 ;
     Display *dpy=hostx_get_display () ;
@@ -1433,9 +1434,9 @@ hostx_has_dri (void)
     if (!dpy)
         return FALSE ;
 
-    if (!XF86DRIQueryExtension (dpy,
-                                &event_base,
-                                &error_base)) {
+    if (!DRI2QueryExtension (dpy,
+			     &event_base,
+			     &error_base)) {
         return FALSE ;
     }
     return TRUE ;

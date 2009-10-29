@@ -124,6 +124,12 @@ typedef struct {
     short x1,y1,x2,y2;
 } EphyrRect;
 
+void
+hostx_errors_trap(void);
+
+int
+hostx_errors_untrap(void);
+
 int
 hostx_want_screen_size(EphyrScreenInfo screen, int *width, int *height);
 
@@ -247,7 +253,7 @@ int hostx_set_window_clipping_rectangles (int a_window,
                                           int a_num_rects) ;
 int hostx_has_xshape (void) ;
 
-#ifdef XF86DRI
+#if defined (XF86DRI) || defined (DRI2)
 int hostx_lookup_peer_window (void *a_local_window,
                               int *a_host_peer /*out parameter*/) ;
 int
@@ -256,9 +262,14 @@ hostx_allocate_resource_id_peer (int a_local_resource_id,
 int
 hostx_get_resource_id_peer (int a_local_resource_id,
                             int *a_remote_resource_id) ;
-int hostx_has_dri (void) ;
 
 int hostx_has_glx (void) ;
-#endif /* XF86DRI */
+#endif /* defined (XF86DRI) || defined (DRI2) */
+#ifdef XF86DRI
+int hostx_has_dri (void) ;
+#endif
+#ifdef DRI2
+int hostx_has_dri2 (void) ;
+#endif
 
 #endif /*_XLIBS_STUFF_H_*/

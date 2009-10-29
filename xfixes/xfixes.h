@@ -24,8 +24,8 @@
 #include <dix-config.h>
 #endif
 
-#ifndef _XFIXES_H_
-#define _XFIXES_H_
+#ifndef _SERVER_XFIXES_H_
+#define _SERVER_XFIXES_H_
 
 #include "resource.h"
 
@@ -55,4 +55,4 @@ extern _X_EXPORT RegionPtr
 XFixesRegionCopy (RegionPtr pRegion);
 
 
-#endif /* _XFIXES_H_ */
+#endif /* _SERVER_XFIXES_H_ */

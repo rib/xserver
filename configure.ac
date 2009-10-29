@@ -1865,6 +1865,7 @@ AM_CONDITIONAL([DMX_BUILD_USB], [test "x$DMX_BUILD_USB" = xyes])
 
 dnl kdrive DDX
 
+XEPHYR_CFLAGS=
 XEPHYR_LIBS=
 XEPHYR_INCS=
 
@@ -1919,9 +1920,13 @@ if test "$KDRIVE" = yes; then
         XEPHYR_REQUIRED_LIBS="$XEPHYR_REQUIRED_LIBS $LIBGL libdrm"
     fi
 
-    PKG_CHECK_MODULES(XEPHYR, $XEPHYR_REQUIRED_LIBS, [xephyr="yes"], [xephyr="no"])
+    if test "x$XEPHYR" = xyes; then
+        # In this case we will get a verbose warning if any dependencies are
+        # missing
+	PKG_CHECK_MODULES(XEPHYR, $XEPHYR_REQUIRED_LIBS)
+    fi
     if test "x$XEPHYR" = xauto; then
-        XEPHYR=$xephyr
+	PKG_CHECK_MODULES(XEPHYR, $XEPHYR_REQUIRED_LIBS, [XEPHYR="yes"], [XEPHYR="no"])
     fi
 
     # Xephyr needs nanosleep() which is in librt on Solaris
@@ -1950,6 +1955,7 @@ if test "$KDRIVE" = yes; then
     KDRIVE_LOCAL_LIBS="$KDRIVE_LOCAL_LIBS $KDRIVE_OS_LIB $OS_LIB"
     KDRIVE_LIBS="$TSLIB_LIBS $KDRIVE_LOCAL_LIBS $XSERVER_SYS_LIBS $GLX_SYS_LIBS"
 
+    AC_SUBST([XEPHYR_CFLAGS])
     AC_SUBST([XEPHYR_LIBS])
     AC_SUBST([XEPHYR_INCS])
 fi

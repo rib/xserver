@@ -35,7 +35,7 @@ extern Bool   kdHasPointer;
 extern Bool   kdHasKbd;
 
 #ifdef GLXEXT
-extern Bool   ephyrNoDRI;
+extern Bool   ephyrNoDRI2;
 extern Bool noGlxVisualInit;
 #endif
 extern Bool   ephyrNoXV;
@@ -240,7 +240,7 @@ ddxProcessArgument (int argc, char **argv, int i)
   else if (!strcmp (argv[i], "-nodri"))
    {
        noGlxVisualInit = FALSE ;
-       ephyrNoDRI = TRUE ;
+       ephyrNoDRI2 = TRUE ;
        EPHYR_LOG ("no direct rendering enabled\n") ;
        return 1 ;
    }

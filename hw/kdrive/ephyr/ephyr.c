@@ -3,6 +3,7 @@
  *          Authored by Matthew Allum <mallum@openedhand.com>
  * 
  * Copyright © 2004 Nokia 
+ * Copyright © 2009 Intel Corporation.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -26,6 +27,9 @@
 #ifdef HAVE_CONFIG_H
 #include <kdrive-config.h>
 #endif
+/* FIXME */
+#undef XF86DRI
+
 #include "ephyr.h"
 
 #include "inputstr.h"
@@ -37,6 +41,11 @@
 #include "ephyrdriext.h"
 #include "ephyrglxext.h"
 #endif /* XF86DRI */
+#ifdef DRI2
+#include "ephyrdri2.h"
+#include "ephyrdri2ext.h"
+#include "ephyrglxext.h"
+#endif /* DRI2 */
 
 extern int KdTsPhyScreen;
 #ifdef GLXEXT
@@ -47,6 +56,7 @@ KdKeyboardInfo *ephyrKbd;
 KdPointerInfo *ephyrMouse;
 EphyrKeySyms ephyrKeySyms;
 Bool ephyrNoDRI=FALSE ;
+Bool ephyrNoDRI2=FALSE ;
 Bool ephyrNoXV=FALSE ;
 
 static int mouseState = 0;
@@ -640,21 +650,29 @@ ephyrInitScreen (ScreenPtr pScreen)
 #endif /*XV*/
 
 #ifdef XF86DRI
-  if (!ephyrNoDRI && !hostx_has_dri ()) {
-      EPHYR_LOG ("host x does not support DRI. Disabling DRI forwarding\n") ;
-      ephyrNoDRI = TRUE ;
-#ifdef GLXEXT
-      noGlxVisualInit = FALSE ;
-#endif
+  if (!ephyrNoDRI2 && !hostx_has_dri ()) {
+      EPHYR_LOG ("host x does not support DRI2. Disabling DRI2 forwarding\n") ;
+      ephyrNoDRI2 = TRUE ;
   }
-  if (!ephyrNoDRI) {
+  if (!ephyrNoDRI2) {
     ephyrDRIExtensionInit (pScreen) ;
     ephyrHijackGLXExtension () ;
   }
-#endif
+#endif /* XF86DRI */
+
+#ifdef DRI2
+  if (!ephyrNoDRI2 && !hostx_has_dri2 ()) {
+      EPHYR_LOG ("host x does not support DRI2. Disabling DRI2 forwarding\n") ;
+      ephyrNoDRI2 = TRUE ;
+  }
+  if (!ephyrNoDRI2) {
+    ephyrDRI2ExtensionSetup (pScreen) ;
+    ephyrHijackGLXExtension () ;
+  }
+#endif /* DRI2 */
 
 #ifdef GLXEXT
-  if (ephyrNoDRI) {
+  if (ephyrNoDRI && ephyrNoDRI2) {
       noGlxVisualInit = FALSE ;
   }
 #endif
@@ -865,7 +883,7 @@ miPointerScreenFuncRec ephyrPointerScreenFuncs =
   NULL
 };
 
-#ifdef XF86DRI
+#if defined (XF86DRI) || defined (DRI2)
 /**
  * find if the remote window denoted by a_remote
  * is paired with an internal Window within the Xephyr server.
@@ -883,21 +901,39 @@ miPointerScreenFuncRec ephyrPointerScreenFuncs =
 static void
 ephyrExposePairedWindow (int a_remote)
 {
-    EphyrWindowPair *pair = NULL;
+#ifdef XF86DRI
+    EphyrDRIWindowPair *dri_pair = NULL;
+#endif
+#ifdef DRI2
+    EphyrDRI2WindowPair *dri2_pair = NULL;
+#endif
     RegionRec reg;
     ScreenPtr screen;
 
-    if (!findWindowPairFromRemote (a_remote, &pair)) {
-	EPHYR_LOG ("did not find a pair for this window\n");
+#ifdef XF86DRI
+    if (ephyrDRIGetWindowPairFromHostWindow (a_remote, &dri_pair)) {
+	screen = dri_pair->local->drawable.pScreen;
+	REGION_NULL (screen, &reg);
+	REGION_COPY (screen, &reg, &dri_pair->local->clipList);
+	screen->WindowExposures (dri_pair->local, &reg, NullRegion);
+	REGION_UNINIT (screen, &reg);
 	return;
     }
-    screen = pair->local->drawable.pScreen;
-    REGION_NULL (screen, &reg);
-    REGION_COPY (screen, &reg, &pair->local->clipList);
-    screen->WindowExposures (pair->local, &reg, NullRegion);
-    REGION_UNINIT (screen, &reg);
+#endif
+#ifdef DRI2
+    if (ephyrDRI2GetWindowPairFromHostWindow (a_remote, &dri2_pair)) {
+	screen = dri2_pair->local->drawable.pScreen;
+	REGION_NULL (screen, &reg);
+	REGION_COPY (screen, &reg, &dri2_pair->local->clipList);
+	screen->WindowExposures (dri2_pair->local, &reg, NullRegion);
+	REGION_UNINIT (screen, &reg);
+	return;
+    }
+#endif
+
+    EPHYR_LOG ("did not find a pair for this window\n");
 }
-#endif /* XF86DRI */
+#endif /* defined (XF86DRI) || defined (DRI2) */
 
 void
 ephyrPoll(void)
@@ -933,27 +969,43 @@ ephyrPoll(void)
               {
                   int x=0, y=0;
 #ifdef XF86DRI
-                  EphyrWindowPair *pair = NULL;
+                  EphyrDRIWindowPair *dri_pair = NULL;
 #endif
+#ifdef DRI2
+                  EphyrDRI2WindowPair *dri2_pair = NULL;
+#endif
+		  Bool peered = FALSE;
+
                   EPHYR_LOG ("enqueuing mouse motion:%d\n", ephyrCurScreen) ;
                   x = ev.data.mouse_motion.x;
                   y = ev.data.mouse_motion.y;
                   EPHYR_LOG ("initial (x,y):(%d,%d)\n", x, y) ;
-#ifdef XF86DRI
                   EPHYR_LOG ("is this window peered by a gl drawable ?\n") ;
-                  if (findWindowPairFromRemote (ev.data.mouse_motion.window,
-                                                &pair))
+#ifdef XF86DRI
+                  if (ephyrDRIGetWindowPairFromHostWindow (
+						ev.data.mouse_motion.window,
+                                                &dri_pair))
+		    {
+                        EPHYR_LOG ("yes, it is peered\n") ;
+                        x += dri_pair->local->drawable.x;
+                        y += dri_pair->local->drawable.y;
+			peered = TRUE;
+		    }
+#endif
+#ifdef DRI2
+                  if (!peered && ephyrDRI2GetWindowPairFromHostWindow (
+						ev.data.mouse_motion.window,
+                                                &dri2_pair))
                     {
                         EPHYR_LOG ("yes, it is peered\n") ;
-                        x += pair->local->drawable.x;
-                        y += pair->local->drawable.y;
+                        x += dri2_pair->local->drawable.x;
+                        y += dri2_pair->local->drawable.y;
+			peered = TRUE;
                     }
-                  else
-                    {
-                        EPHYR_LOG ("no, it is not peered\n") ;
-                    }
-                  EPHYR_LOG ("final (x,y):(%d,%d)\n", x, y) ;
 #endif
+		  if (!peered)
+		      EPHYR_LOG ("no, it is not peered\n") ;
+                  EPHYR_LOG ("final (x,y):(%d,%d)\n", x, y) ;
                   KdEnqueuePointerEvent(ephyrMouse, mouseState, x, y, 0);
               }
           }
@@ -996,7 +1048,7 @@ ephyrPoll(void)
 	  KdEnqueueKeyboardEvent (ephyrKbd, ev.data.key_up.scancode, TRUE);
 	  break;
 
-#ifdef XF86DRI
+#if defined (XF86DRI) || defined (DRI2)
 	case EPHYR_EV_EXPOSE:
 	  /*
 	   * We only receive expose events when the expose event have
@@ -1006,7 +1058,7 @@ ephyrPoll(void)
 	   */
 	  ephyrExposePairedWindow (ev.data.expose.window);
 	  break;
-#endif /* XF86DRI */
+#endif /* defined (XF86DRI) || defined (DRI2) */
 
 	default:
 	  break;
