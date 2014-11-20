@@ -459,6 +459,9 @@ __glXGetDrawable(__GLXcontext * glxc, GLXDrawable drawId, ClientPtr client,
 {
     DrawablePtr pDraw;
     __GLXdrawable *pGlxDraw;
+    __GLXscreen *pGlxScreen;
+    __GLXconfig *config;
+    XID vid;
     int rc;
 
     if (validGlxDrawable(client, drawId, GLX_DRAWABLE_ANY,
@@ -470,13 +473,6 @@ __glXGetDrawable(__GLXcontext * glxc, GLXDrawable drawId, ClientPtr client,
         }
 
         return pGlxDraw;
-    }
-
-    /* No active context and an unknown drawable, bail. */
-    if (glxc == NULL) {
-        client->errorValue = drawId;
-        *error = BadMatch;
-        return NULL;
     }
 
     /* The drawId wasn't a GLX drawable.  Make sure it's a window and
@@ -491,19 +487,30 @@ __glXGetDrawable(__GLXcontext * glxc, GLXDrawable drawId, ClientPtr client,
         return NULL;
     }
 
-    if (pDraw->pScreen != glxc->pGlxScreen->pScreen) {
+    pGlxScreen = glxGetScreen(pDraw->pScreen);
+    if (!pGlxScreen) {
         client->errorValue = pDraw->pScreen->myNum;
         *error = BadMatch;
         return NULL;
     }
 
-    if (!validGlxFBConfigForWindow(client, glxc->config, pDraw, error))
+    vid = wVisual((WindowPtr) pDraw);
+    if (!validGlxVisual(client, pGlxScreen, vid, &config, error)) {
+        client->errorValue = vid;
+        *error = BadMatch;
         return NULL;
+    }
 
-    pGlxDraw = glxc->pGlxScreen->createDrawable(client, glxc->pGlxScreen,
-                                                pDraw, drawId,
-                                                GLX_DRAWABLE_WINDOW,
-                                                drawId, glxc->config);
+    if (glxc != NULL && config != glxc->config) {
+        client->errorValue = drawId;
+        *error = BadMatch;
+        return NULL;
+    }
+
+    pGlxDraw = pGlxScreen->createDrawable(client, pGlxScreen,
+                                          pDraw, drawId,
+                                          GLX_DRAWABLE_WINDOW,
+                                          drawId, config);
     if (!pGlxDraw) {
 	*error = BadAlloc;
 	return NULL;
@@ -1896,64 +1903,36 @@ DoGetDrawableAttributes(__GLXclientState * cl, XID drawId)
 {
     ClientPtr client = cl->client;
     xGLXGetDrawableAttributesReply reply;
-    __GLXdrawable *pGlxDraw;
-    CARD32 attributes[14];
     int numAttribs = 0, error;
+    __GLXdrawable *pGlxDraw = __glXGetDrawable(NULL, drawId, client, &error);
+    CARD32 attributes[14];
 
-    if (!validGlxDrawable(client, drawId, GLX_DRAWABLE_ANY,
-                          DixGetAttrAccess, &pGlxDraw, &error)) {
-        DrawablePtr pDraw;
+    if (pGlxDraw == NULL)
+        return error;
 
-        /* Ideally we wouldn't try and support Windows and Pixmaps as
-         * GLXDrawables for apis added since GLX 1.2 but there are multiple
-         * projects in the wild that expect to be able to query the width and
-         * height of a drawable via glXQueryDrawable, and since this works with
-         * the proprietary Nvidia driver we end up with tools only tested to
-         * work with the Nvidia driver that then don't work with Mesa.
-         *
-         * Without resorting to trying to create a __GLXdrawable lazily here
-         * where we might not have a current context we just handle
-         * GLX_WIDTH/HEIGHT queries as a special case...
-         */
-        error = dixLookupDrawable(&pDraw, drawId, client,
-                                  M_DRAWABLE, DixGetAttrAccess);
-        if (error != Success) {
-	    client->errorValue = drawId;
-            return __glXError(GLXBadDrawable);
-        }
-
-        attributes[0] = GLX_WIDTH;
-        attributes[1] = pDraw->width;
+    attributes[0] = GLX_TEXTURE_TARGET_EXT;
+    attributes[1] = pGlxDraw->target == GL_TEXTURE_2D ? GLX_TEXTURE_2D_EXT :
+        GLX_TEXTURE_RECTANGLE_EXT;
+    numAttribs++;
+    attributes[2] = GLX_Y_INVERTED_EXT;
+    attributes[3] = GL_FALSE;
+    numAttribs++;
+    attributes[4] = GLX_EVENT_MASK;
+    attributes[5] = pGlxDraw->eventMask;
+    numAttribs++;
+    attributes[6] = GLX_WIDTH;
+    attributes[7] = pGlxDraw->pDraw->width;
+    numAttribs++;
+    attributes[8] = GLX_HEIGHT;
+    attributes[9] = pGlxDraw->pDraw->height;
+    numAttribs++;
+    attributes[10] = GLX_FBCONFIG_ID;
+    attributes[11] = pGlxDraw->config->fbconfigID;
+    numAttribs++;
+    if (pGlxDraw->type == GLX_DRAWABLE_PBUFFER) {
+        attributes[12] = GLX_PRESERVED_CONTENTS;
+        attributes[13] = GL_TRUE;
         numAttribs++;
-        attributes[2] = GLX_HEIGHT;
-        attributes[3] = pDraw->height;
-        numAttribs++;
-    }
-    else {
-        attributes[0] = GLX_TEXTURE_TARGET_EXT;
-        attributes[1] = pGlxDraw->target == GL_TEXTURE_2D ? GLX_TEXTURE_2D_EXT :
-            GLX_TEXTURE_RECTANGLE_EXT;
-        numAttribs++;
-        attributes[2] = GLX_Y_INVERTED_EXT;
-        attributes[3] = GL_FALSE;
-        numAttribs++;
-        attributes[4] = GLX_EVENT_MASK;
-        attributes[5] = pGlxDraw->eventMask;
-        numAttribs++;
-        attributes[6] = GLX_WIDTH;
-        attributes[7] = pGlxDraw->pDraw->width;
-        numAttribs++;
-        attributes[8] = GLX_HEIGHT;
-        attributes[9] = pGlxDraw->pDraw->height;
-        numAttribs++;
-        attributes[10] = GLX_FBCONFIG_ID;
-        attributes[11] = pGlxDraw->config->fbconfigID;
-        numAttribs++;
-        if (pGlxDraw->type == GLX_DRAWABLE_PBUFFER) {
-            attributes[12] = GLX_PRESERVED_CONTENTS;
-            attributes[13] = GL_TRUE;
-            numAttribs++;
-        }
     }
 
     reply = (xGLXGetDrawableAttributesReply) {
